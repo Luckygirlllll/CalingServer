@@ -22,10 +22,10 @@ var jsonData = []
 var databaseCaling = []
 var calingContactList = []
 
-http.createServer(function (req, res){
+http.createServer(function (req, res) {
 
     if (req.method == 'POST') {
-        console.log('POST');
+        console.log('\nPOST');
 
         parseReq(req)
         sendResp(res)
@@ -33,29 +33,30 @@ http.createServer(function (req, res){
 
     if (req.method == 'GET') {
 
-        console.log('GET');
+        console.log('\nGET');
 
-        getCalingContacts(req,res);
+        getCalingContacts(req, res);
     }
 
 }).listen(8000, addresses[0]);
 
 console.log('Server running at', addresses[0], ':8000');
 
-function getCalingContacts(req,res) {
+function getCalingContacts(req, res) {
 
     var pathname = url.parse(req.url).pathname
-    var pathArray =  pathname.split("/")
+    var pathArray = pathname.split("/")
 
     userNumber = pathArray[1];
     userStatus = pathArray[2];
 
-    console.log("pathname NUMBER:" + pathArray[1] + " \npathname STATUS: " + pathArray[2]);
+    console.log("Запрос списка контактов Caling");
+    console.log("Номер пользователя: " + pathArray[1]);
 
     syncLists(userNumber);
 
     var jsonResponce = JSON.stringify({
-        calingBook:usersCaling[userNumber]
+        calingBook: usersCaling[userNumber]
     })
 
     res.writeHead(200, {"Content-Type": "application/json"})
@@ -73,14 +74,16 @@ function syncLists(userNumber) {
         list_of_keys.push(numbers[key]);
     }
 
+    console.log("_____________________________________")
+    console.log("Поиск контактов в базе данных Caling...")
 
-    for(var key in list_of_keys){
+    for (var key in list_of_keys) {
 
         var index = databaseCaling.indexOf(list_of_keys[key])
 
         //Put founding contact to ContactCalingBook for this user, and set random status
         if (index != null && index >= 0) {
-            console.log("-->> совпадение с базой Caling : " + databaseCaling[index]);
+            console.log("-->> совпадение : " + databaseCaling[index]);
 
             list.push(databaseCaling[index])
             usersCaling[userNumber] = list
@@ -88,10 +91,11 @@ function syncLists(userNumber) {
     }
     var contacts_list = usersCaling[userNumber];
 
-    console.log("Список контактов usera: "+ userNumber+" в Caling");
+    console.log("_____________________________________")
+    console.log("Список контактов Caling usera: " + userNumber );
 
-    for(var key in contacts_list){
-        console.log("index: " + key + " номер:" + contacts_list[key]);
+    for (var key in contacts_list) {
+        console.log(key + "." + " номер: " + contacts_list[key]);
     }
 }
 
@@ -111,13 +115,16 @@ function parseReq(req) {
         for (var key in jsonData) {
             tempKey = key;
             tempJson = jsonData[key];
+
+            //save user data
             users[key] = tempJson;
 
             // add user number to database of Caling users
             databaseCaling.push(key);
-            console.log("Push to databaseCaling: " + key);
+            console.log("Регистрация пользователя: ");
 
-            console.log("key" + key  + " value: " + users[key]);
+            console.log("Номер пользователя: " + key);
+            console.log("Телефонная книга пользователя: " + users[key]);
         }
     });
 }
@@ -135,7 +142,7 @@ function sendResp(res) {
 
 
 // Model ContactCaling
-function ContactCaling( id_phone , contacts){
+function ContactCaling(id_phone, contacts) {
     this.id_phone = id_phone
     this.contacts = contacts
 }
