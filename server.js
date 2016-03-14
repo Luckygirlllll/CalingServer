@@ -40,7 +40,7 @@ http.createServer(function (req, res) {
 
 }).listen(8000, addresses[0]);
 
-console.log('Server running at', addresses[0], ':8000');
+console.log('HTTP Server running at', addresses[0], ':8000');
 
 function getCalingContacts(req, res) {
 
@@ -53,22 +53,24 @@ function getCalingContacts(req, res) {
     console.log("Запрос списка контактов Caling");
     console.log("Номер пользователя: " + pathArray[1]);
 
-    syncLists(userNumber);
+    synchronizationContacts(userNumber);
 
     var jsonResponce = JSON.stringify({
         calingBook: usersCaling[userNumber]
     })
+
+    console.log("Отправка json ответа: " + jsonResponce);
 
     res.writeHead(200, {"Content-Type": "application/json"})
     res.end(jsonResponce);
 
 }
 
-function syncLists(userNumber) {
+function synchronizationContacts(userNumber) {
 
     var list_of_keys = [];
-    var numbers = users[userNumber]
-    var list = []
+    var numbers = users[userNumber]; // list of local contacts for current user
+    var list = []; // temp list for save founding contacts
 
     for (var key in numbers) {
         list_of_keys.push(numbers[key]);
@@ -85,18 +87,21 @@ function syncLists(userNumber) {
         if (index != null && index >= 0) {
             console.log("-->> совпадение : " + databaseCaling[index]);
 
-            list.push(databaseCaling[index])
+            list.push(databaseCaling[index]);
             usersCaling[userNumber] = list
         }
     }
     var contacts_list = usersCaling[userNumber];
 
-    console.log("_____________________________________")
-    console.log("Список контактов Caling usera: " + userNumber );
+    console.log("_____________________________________");
+    console.log("Список контактов Caling usera: " + userNumber);
 
     for (var key in contacts_list) {
         console.log(key + "." + " номер: " + contacts_list[key]);
     }
+
+    console.log("_____________________________________");
+
 }
 
 function parseReq(req) {
@@ -111,7 +116,7 @@ function parseReq(req) {
 
         jsonData = JSON.parse(body);
 
-        // add user and him contacts  to Caling user list
+        // add user and him contacts to Caling user list
         for (var key in jsonData) {
             tempKey = key;
             tempJson = jsonData[key];
@@ -119,9 +124,9 @@ function parseReq(req) {
             //save user data
             users[key] = tempJson;
 
-            // add user number to database of Caling users
+            // add user number to database of Caling users numbers
             databaseCaling.push(key);
-            console.log("Регистрация пользователя: ");
+            console.log("Регистрация пользователя ");
 
             console.log("Номер пользователя: " + key);
             console.log("Телефонная книга пользователя: " + users[key]);
@@ -146,3 +151,47 @@ function ContactCaling(id_phone, contacts) {
     this.id_phone = id_phone
     this.contacts = contacts
 }
+
+//============================================WebSocket Server==========================================================
+
+
+var Static = require('node-static');
+var WebSocketServer = new require('ws');
+
+// подключенные клиенты
+var clients = {};
+var port = 8080;
+// WebSocket-сервер на порту 8081
+var webSocketServer = new WebSocketServer.Server({port: port});
+
+webSocketServer.on('connection', function(ws) {
+
+    var id = Math.random();
+    clients[id] = ws;
+    console.log("новое соединение " + id);
+
+    ws.on('message', function(message) {
+        console.log('получено сообщение ' + message);
+
+        for(var key in clients) {
+            clients[key].send(message);
+        }
+    });
+
+    ws.on('close', function() {
+        console.log('соединение закрыто ' + id);
+        delete clients[id];
+    });
+
+});
+
+
+// обычный сервер (статика) на порту 8080
+//var fileServer = new Static.Server('.');
+//http.createServer(function (req, res) {
+//
+//    fileServer.serve(req, res);
+//
+//}).listen(8080);
+
+console.log("WebSocket Server running at port:"+ port);
