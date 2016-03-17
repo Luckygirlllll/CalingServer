@@ -191,13 +191,11 @@
 //console.log("WebSocket Server running at port:" + port);
 
 
-url = require('url'),
-    http = require('http'),
+url = require('url');
+    http = require('http');
     os = require('os');
-//
-WebSocketServer = new require('ws');
 
-//
+WebSocketServer = new require('ws');
 
 
 var interfaces = os.networkInterfaces()
@@ -218,7 +216,7 @@ var users = []
 var usersCaling = [];
 var jsonData = []
 var databaseCaling = []
-var calingContactList = []
+var calingContactList = [];
 var socketClients = []
 
 var webSocketServer = new WebSocketServer.Server({port: 8080})
@@ -226,17 +224,19 @@ webSocketServer.on('connection', function(ws) {
 
     var key = 0
     ws.on('message', function(message) {
-        var data = JSON.parse(message)
+
+        console.log("\nWEB_SOCKET MESSAGE");
+        var data = JSON.parse(message);
 
         for (key in data) {
-            console.log(key, " + ", data[key])
-            socketClients[key] = ws
+            console.log("Пользователь: " + key, " cтатус: ", data[key]);
+            socketClients[key] = ws;
             sendUpdate(key, data[key])
         }
 
 //                         console.log(clients[0])
 //                         console.log("список клиентов" + clients)
-    })
+    });
     ws.on('close', function() {
         //console.log('соедниение закрыто', key)
         //sendUpdate(key,'0')
@@ -245,22 +245,23 @@ webSocketServer.on('connection', function(ws) {
 })
 
 function sendUpdate(number,status){
-    var str = number + ";" + status
-    var list = []
+    console.log("Обновление статусов контактов пользователя");
+    var str = number + ";" + status;
+    var list = [];
     for (var num in socketClients) {
         list.push(num)
     }
-    console.log(list)
-    console.log('________________________________2start')
+    console.log(list);
+    console.log('Статусы обновлены:');
     for (var user in usersCaling) {
-        var userBook = usersCaling[user]
+        var userBook = usersCaling[user];
 
         if (userBook.indexOf(number) > -1 && list.indexOf(user) > -1) {
             socketClients[user].send(str);
-            console.log('send' , number , status, 'to', user)
+            console.log('-->>' , number , " статус: " ,status);
         }
     }
-    console.log('________________________________2end')
+    console.log('________________________________');
 }
 
 
@@ -287,22 +288,22 @@ console.log('Server running at', addresses[0], ':8000');
 
 function getCalingContacts(req, res) {
 
-    var pathname = url.parse(req.url).pathname
-    var pathArray = pathname.split("/")
+    var pathname = url.parse(req.url).pathname;
+    var pathArray = pathname.split("/");
 
     userNumber = pathArray[1];
     userStatus = pathArray[2];
 
-//    console.log("Запрос списка контактов Caling");
-//    console.log("Номер пользователя: " + pathArray[1]);
+    console.log("Запрос списка контактов Caling");
+    console.log("Номер пользователя: " + pathArray[1]);
 
-    syncLists(userNumber);
+    syncLists(userNumber); // synchronize user contacts with Caling users
 
     var jsonResponce = JSON.stringify({
-        calingBook: usersCaling[userNumber]
-    })
+        calingBook : usersCaling[userNumber]
+    });
 
-    res.writeHead(200, {"Content-Type": "application/json"})
+    res.writeHead(200, {"Content-Type": "application/json"});
     res.end(jsonResponce);
 
 }
