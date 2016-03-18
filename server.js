@@ -202,7 +202,7 @@ var interfaces = os.networkInterfaces()
 var addresses = []
 for (var k in interfaces) {
     for (var k2 in interfaces[k]) {
-        var address = interfaces[k][k2]
+        var address = interfaces[k][k2];
         if (address.family == 'IPv4' && !address.internal) {
             addresses.push(address.address)
         }
@@ -212,37 +212,112 @@ for (var k in interfaces) {
 var tempKey;
 var tempJson;
 
-var users = []
+var users = [];
 var usersCaling = [];
-var jsonData = []
-var databaseCaling = []
+var jsonData = [];
+var databaseCaling = [];
 var calingContactList = [];
-var socketClients = []
+var socketClients = [];
 
-var webSocketServer = new WebSocketServer.Server({port: 8080})
+var webSocketServer = new WebSocketServer.Server({port: 8080});
 webSocketServer.on('connection', function(ws) {
 
     var key = 0
     ws.on('message', function(message) {
 
-        console.log("\nWEB_SOCKET MESSAGE");
-        var data = JSON.parse(message);
 
-        for (key in data) {
-            console.log("Пользователь: " + key, " cтатус: ", data[key]);
-            socketClients[key] = ws;
-            sendUpdate(key, data[key])
+        console.log("\nWEB_SOCKET MESSAGE");
+
+        data = JSON.parse(message);
+
+        for (var message_tag in data){
+            switch (message_tag){
+                case "user_calling":
+                    registrCall(message);
+                    break;
+
+                case "update_status":
+                    sendUpdateMOCK(message);
+                    break;
+            }
         }
 
-//                         console.log(clients[0])
-//                         console.log("список клиентов" + clients)
+        //fixme switch on sendUpdateMOCK()
+
+        //var data = JSON.parse(message);
+        //
+        //for (key in data) {
+        //    console.log("Пользователь: " + key, " cтатус: ", data[key]);
+        //    socketClients[key] = ws;
+        //    sendUpdate(key, data[key])
+        //}
+
     });
+
     ws.on('close', function() {
         //console.log('соедниение закрыто', key)
         //sendUpdate(key,'0')
         delete socketClients[key]
     })
-})
+
+});
+
+/**Method for registration users calling
+ * as parameter accept JSON string  { "user_calling" : [ {"from":"numberFrom"} , {"to":"numberTo" }] }
+ *
+ * @param jsonString
+ */
+function registrCall(jsonString){
+
+    var fromUserNumber;
+    var toUserNumber;
+
+    var data = JSON.parse(jsonString);
+
+    for (var message_tag in data){
+
+        for (var object in data[message_tag]){
+
+            for (var key in data[message_tag][object]){
+
+                switch (key){
+                    case "from":
+                        fromUserNumber = data[message_tag][object][key];
+                        break;
+                    case "to":
+                        toUserNumber = data[message_tag][object][key];
+                        break;
+                }
+            }
+        }
+    }
+
+    console.log("Outcoming call from user: " + fromUserNumber + " to user: " + toUserNumber);
+}
+
+
+/**Method for update users status
+ * as parameter accept JSON string
+ * {" update_status " : { "user_number" : "user_status" }}
+ *
+ * @param jsonString
+ */
+function sendUpdateMOCK(jsonString){
+
+    var user_number;
+    var user_status;
+
+    var data = JSON.parse(jsonString);
+
+    for (var tag in data){
+        for (var key in data[tag]){
+            user_number = key;
+            user_status = data[tag][key];
+        }
+    }
+
+    console.log("\nUpdate user status \nnumber: " + user_number + " status: " + user_status);
+}
 
 function sendUpdate(number,status){
     console.log("Обновление статусов контактов пользователя");
@@ -297,7 +372,7 @@ function getCalingContacts(req, res) {
     console.log("Запрос списка контактов Caling");
     console.log("Номер пользователя: " + pathArray[1]);
 
-    syncLists(userNumber); // synchronize user contacts with Caling users
+    synchronizeContactBooks(userNumber); // synchronize user contacts with Caling users
 
     var jsonResponce = JSON.stringify({
         calingBook : usersCaling[userNumber]
@@ -308,11 +383,11 @@ function getCalingContacts(req, res) {
 
 }
 
-function syncLists(userNumber) {
+function synchronizeContactBooks(userNumber) {
 
     var list_of_keys = [];
-    var numbers = users[userNumber]
-    var list = []
+    var numbers = users[userNumber];
+    var list = [];
 
     for (var key in numbers) {
         list_of_keys.push(numbers[key]);
@@ -323,14 +398,14 @@ function syncLists(userNumber) {
 
     for (var key in list_of_keys) {
 
-        var index = databaseCaling.indexOf(list_of_keys[key])
+        var index = databaseCaling.indexOf(list_of_keys[key]);
 
         //Put founding contact to ContactCalingBook for this user, and set random status
         if (index != null && index >= 0) {
 //            console.log("-->> совпадение : " + databaseCaling[index]);
 
-            list.push(databaseCaling[index])
-            usersCaling[userNumber] = list
+            list.push(databaseCaling[index]);
+            usersCaling[userNumber] = list;
         }
     }
     var contacts_list = usersCaling[userNumber];
@@ -345,7 +420,7 @@ function syncLists(userNumber) {
 
 function parseReq(req) {
 
-    var url_path = url.parse(req.url).pathname
+    var url_path = url.parse(req.url).pathname;
     var body = '';
 
     req.on('data', function (data) {
@@ -375,7 +450,7 @@ function parseReq(req) {
 
 function addNewUser(user) {
     for (key in user) {
-        users[key] = user[key]
+        users[key] = user[key];
     }
 }
 
@@ -387,8 +462,8 @@ function sendResp(res) {
 
 // Model ContactCaling
 function ContactCaling(id_phone, contacts) {
-    this.id_phone = id_phone
-    this.contacts = contacts
+    this.id_phone = id_phone;
+    this.contacts = contacts;
 }
 
 
