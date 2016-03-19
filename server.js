@@ -220,37 +220,29 @@ var calingContactList = [];
 var socketClients = [];
 
 var webSocketServer = new WebSocketServer.Server({port: 8080});
+
 webSocketServer.on('connection', function(ws) {
 
-    var key = 0
-    ws.on('message', function(message) {
+    var key = 0;
 
+    ws.on('message', function(message) {
 
         console.log("\nWEB_SOCKET MESSAGE");
 
-        data = JSON.parse(message);
+        var data = JSON.parse(message);
 
         for (var message_tag in data){
             switch (message_tag){
+
                 case "user_calling":
-                    registrCall(message);
+                    callRegistration(message);
                     break;
 
                 case "update_status":
-                    sendUpdateMOCK(message);
+                    sendUpdateMOCK(message, ws);
                     break;
             }
         }
-
-        //fixme switch on sendUpdateMOCK()
-
-        //var data = JSON.parse(message);
-        //
-        //for (key in data) {
-        //    console.log("Пользователь: " + key, " cтатус: ", data[key]);
-        //    socketClients[key] = ws;
-        //    sendUpdate(key, data[key])
-        //}
 
     });
 
@@ -259,20 +251,20 @@ webSocketServer.on('connection', function(ws) {
         //sendUpdate(key,'0')
         delete socketClients[key]
     })
-
 });
 
 /**Method for registration users calling
- * as parameter accept JSON string  { "user_calling" : [ {"from":"numberFrom"} , {"to":"numberTo" }] }
+ * as parameter accept JSON string
+ * {"user_calling" : [ {"from":"numberFrom"} , {"to":"numberTo" }]}
  *
- * @param jsonString
+ * @param message
  */
-function registrCall(jsonString){
+function callRegistration(message){
 
     var fromUserNumber;
     var toUserNumber;
 
-    var data = JSON.parse(jsonString);
+    var data = JSON.parse(message);
 
     for (var message_tag in data){
 
@@ -292,20 +284,24 @@ function registrCall(jsonString){
         }
     }
 
-    console.log("Outcoming call from user: " + fromUserNumber + " to user: " + toUserNumber);
+    console.log("\nOutcoming call \nfrom user: " + fromUserNumber + " to user: " + toUserNumber);
 }
 
 
 /**Method for update users status
- * as parameter accept JSON string
- * {" update_status " : { "user_number" : "user_status" }}
+ * as parameter accept JSON string {"update_status" : { "user_number" : "user_status" }}
+ * and websocket client.
+ *
+ * Response json  {"phone":"+380932...","status":1}
  *
  * @param jsonString
+ * @param websocket
  */
-function sendUpdateMOCK(jsonString){
+function sendUpdateMOCK(jsonString, websocket){
 
     var user_number;
     var user_status;
+    var list = [];
 
     var data = JSON.parse(jsonString);
 
@@ -313,6 +309,25 @@ function sendUpdateMOCK(jsonString){
         for (var key in data[tag]){
             user_number = key;
             user_status = data[tag][key];
+        }
+    }
+
+    socketClients[user_number] = websocket;
+
+    for (var num in socketClients) {
+        list.push(num)
+    }
+
+
+    for (var user in usersCaling) {
+
+        var userBook = usersCaling[user];
+
+        if (userBook.indexOf(user) > -1 && list.indexOf(user) > -1) {
+            var json = JSON.stringify(new ContactCaling(user_number, user_status));
+            socketClients[user].send(json);
+            console.log(json)
+            console.log('-->>' , user_number , " статус: " ,user_status);
         }
     }
 
@@ -461,9 +476,9 @@ function sendResp(res) {
 
 
 // Model ContactCaling
-function ContactCaling(id_phone, contacts) {
-    this.id_phone = id_phone;
-    this.contacts = contacts;
+function ContactCaling(phone, status) {
+    this.phone = phone;
+    this.status = status;
 }
 
 
